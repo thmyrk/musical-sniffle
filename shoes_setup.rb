@@ -1,0 +1,2 @@
+Shoes.setup do
+end
