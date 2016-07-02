@@ -1,3 +1,6 @@
+# songs directory
+/songs/
+
 *.gem
 *.rbc
 /.config
