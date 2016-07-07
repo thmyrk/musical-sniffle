@@ -1,9 +1,11 @@
 require_relative 'shoes_setup'
 require_relative 'song'
+require_relative 'lyric'
 require_relative 'string_extensions'
 require_relative 'shoes_extensions'
 
 APP_NAME = 'Musical Sniffle'.freeze
+APP_ROOT = Dir.pwd
 
 class Songwriter < Shoes
   url '/', :intro_window
@@ -11,6 +13,7 @@ class Songwriter < Shoes
 
   def song_window(song_name)
     @current_song = Song.new(song_name)
+    @current_song.enter_song_directory
 
     flow do
       @lyrics_tab = stack(width: 0.33) do
@@ -26,9 +29,18 @@ class Songwriter < Shoes
 
     @lyrics_flow = flow do
       stack do
-        p @current_song.lyrics
-        list_box items: @current_song.lyrics, align: 'center'
-        edit_box width: 0.9, height: 0.8
+        current_lyric = nil
+        list_box items: @current_song.lyrics, align: 'center' do |list|
+          current_lyric = Lyric.new(list.text)
+          @lyrics_box.text = current_lyric.text
+        end
+        @lyrics_box = edit_box width: 0.9, height: 0.8
+        button "Save" do
+          current_lyric.text = @lyrics_box.text
+          current_lyric.date = Time.now
+          current_lyric.save
+          puts "Save successful"
+        end
       end
     end
 
