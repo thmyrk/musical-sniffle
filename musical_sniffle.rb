@@ -6,8 +6,10 @@ require_relative 'shoes_extensions'
 
 APP_NAME = 'Musical Sniffle'.freeze
 APP_ROOT = Dir.pwd
+WINDOW_WIDTH = 600
+WINDOW_HEIGHT = 600
 
-class Songwriter < Shoes
+class MusicalSniffle < Shoes
   url '/', :intro_window
   url '/(\w+)', :song_window
 
@@ -28,17 +30,28 @@ class Songwriter < Shoes
     end
 
     @lyrics_flow = flow do
+      stack width: 0.5, margin_top: 30, margin_bottom: 20 do
+        @new_song_line = edit_line width: 1.0, margin_left: 30, margin_right: 30
+      end
+      stack width: 0.5, margin_top: 30, margin_bottom: 20 do
+        button 'Create new lyrics', width: 1.0, margin_left: 30, margin_right: 30 do
+          new_lyric = Lyric.new @new_song_line.text.to_filename
+          @current_song.add_lyrics(new_lyric.filename)
+          @current_lyric = new_lyric
+          @lyrics_list.items = @current_song.lyrics
+          @lyrics_list.choose new_lyric.filename
+        end
+      end
       stack do
-        current_lyric = nil
-        list_box items: @current_song.lyrics, align: 'center' do |list|
-          current_lyric = Lyric.new(list.text)
-          @lyrics_box.text = current_lyric.text
+        @lyrics_list = list_box items: @current_song.lyrics, align: 'center' do |list|
+          @current_lyric = Lyric.new(list.text)
+          @lyrics_box.text = @current_lyric.text
         end
         @lyrics_box = edit_box width: 0.9, height: 0.8
         button "Save" do
-          current_lyric.text = @lyrics_box.text
-          current_lyric.date = Time.now
-          current_lyric.save
+          @current_lyric.text = @lyrics_box.text
+          @current_lyric.date = Time.now
+          @current_lyric.save
           puts "Save successful"
         end
       end
@@ -144,4 +157,4 @@ class Songwriter < Shoes
   end
 end
 
-Shoes.app(width: 600, height: 600, margin: 10, title: APP_NAME)
+Shoes.app(width: WINDOW_WIDTH, height: WINDOW_HEIGHT, margin: 10, title: APP_NAME)

@@ -32,4 +32,41 @@ class TestLyric < Test::Unit::TestCase
       backup.close
     end
   end
+
+  def test_opening_empty_lyrics
+    FakeFS do
+      lyrics_file = File.new("lyrics/#{TEST_FILENAME}", 'w+', 0755)
+      lyric = Lyric.new(TEST_FILENAME)
+      assert_equal '', lyric.text
+      assert_equal [], lyric.labels
+      assert lyric.date.strftime("%Y-%m-%d,%H:%M").match(/\d\d\d\d-\d\d-\d\d,\d\d:\d\d/)
+
+      assert File.file?("lyrics/#{TEST_FILENAME}.bak")
+      backup = File.open("lyrics/#{TEST_FILENAME}.bak", 'r')
+      assert backup.read == lyrics_file.read
+
+      lyrics_file.close
+      backup.close
+    end
+  end
+
+  def test_creating_new_lyrics
+    FakeFS do
+      assert !File.file?("lyrics/#{TEST_FILENAME}")
+      lyric = Lyric.new(TEST_FILENAME)
+      assert File.file?("lyrics/#{TEST_FILENAME}")
+      lyrics_file = File.open("lyrics/#{TEST_FILENAME}", 'r')
+
+      assert_equal lyric.text, ''
+      assert_equal lyric.labels, []
+      assert lyric.date.strftime("%Y-%m-%d,%H:%M").match(/\d\d\d\d-\d\d-\d\d,\d\d:\d\d/)
+
+      assert File.file?("lyrics/#{TEST_FILENAME}.bak")
+      backup = File.open("lyrics/#{TEST_FILENAME}.bak", 'r')
+      assert backup.read == lyrics_file.read
+
+      lyrics_file.close
+      backup.close
+    end
+  end
 end
