@@ -7,40 +7,69 @@ class Lyric
   def initialize(lyric_filename)
     @filename = lyric_filename
     @text = ''
-
-    file = File.file?("lyrics/#{@filename}") ? File.open("lyrics/#{@filename}", 'r')
-                                             : File.new("lyrics/#{@filename}", 'w+')
+    @labels = []
+    @date = Time.now
+    read_data
+    save
     backup_file @filename
-    while (line = file.gets) do
+  end
+
+  def read_data
+    file = new_or_existing_file @filename
+    while (line = file.gets)
       line_elements = line.split(' ')
       case line_elements[0]
       when 'date:'
-        date_elements = line_elements[1].split(/-|:|,/)
-        @date = Time.new(*date_elements)
-        puts "date: #{@date}"
+        if line_elements.count == 2
+          date_elements = line_elements[1].split(/-|:|,/)
+          @date = Time.new(*date_elements)
+          puts "date: #{@date}"
+        end
       when 'labels:'
-        @labels = line_elements[1].split(',')
-        puts "labels: #{@labels}"
+        if line_elements.count == 2
+          @labels = line_elements[1].split(',')
+          puts "labels: #{@labels}"
+        end
       else
         @text << line
       end
     end
     file.close
-    @labels ||= []
-    @date ||= Time.now
   end
 
-  def save(filename = nil)
-    @filename = filename if filename
+  def save(new_filename = nil)
+    @filename = new_filename if new_filename
     Dir.chdir 'lyrics' do
+      #File.open(append_time(@filename), 'w') do |file|
       File.open(@filename, 'w') do |file|
-        file.puts("date: #{@date.strftime("%Y-%m-%d,%H:%M:%S")}", "labels: #{@labels.join(',')}")
+        file.puts("date: #{@date.strftime('%Y-%m-%d,%H:%M:%S')}", "labels: #{@labels.join(',')}")
         file.write(@text)
       end
     end
   end
 
+  def delete
+    Dir.chdir 'lyrics' do
+      File.delete @filename
+    end
+  end
+
+  def to_s
+    @filename
+  end
+
   private
+
+  def new_or_existing_file(filename)
+    filepath = File.join('lyrics', filename) #append_time(filename))
+    file = nil
+    if File.file?(filepath)
+      file = File.open(filepath, 'r')
+    elsif
+      file = File.new(filepath, 'w+')
+    end
+    file
+  end
 
   def backup_file(filename)
     Dir.chdir 'lyrics' do

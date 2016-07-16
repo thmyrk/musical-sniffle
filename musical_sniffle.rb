@@ -3,6 +3,7 @@ require_relative 'song'
 require_relative 'lyric'
 require_relative 'string_extensions'
 require_relative 'shoes_extensions'
+require_relative 'utilities'
 
 APP_NAME = 'Musical Sniffle'.freeze
 APP_ROOT = Dir.pwd
@@ -10,6 +11,7 @@ WINDOW_WIDTH = 600
 WINDOW_HEIGHT = 600
 
 class MusicalSniffle < Shoes
+  include Utilities
   url '/', :intro_window
   url '/(\w+)', :song_window
 
@@ -31,28 +33,43 @@ class MusicalSniffle < Shoes
 
     @lyrics_flow = flow do
       stack width: 0.5, margin_top: 30, margin_bottom: 20 do
-        @new_song_line = edit_line width: 1.0, margin_left: 30, margin_right: 30
+        # new lyrics name line
+        @new_song_line = edit_line 'New lyric name', width: 1.0, margin_left: 30, margin_right: 30
       end
       stack width: 0.5, margin_top: 30, margin_bottom: 20 do
+        # new lyrics button
         button 'Create new lyrics', width: 1.0, margin_left: 30, margin_right: 30 do
           new_lyric = Lyric.new @new_song_line.text.to_filename
-          @current_song.add_lyrics(new_lyric.filename)
+          @current_song.add_section_element 'lyrics', new_lyric.filename
           @current_lyric = new_lyric
-          @lyrics_list.items = @current_song.lyrics
+          @lyrics_list.items = @current_song.lyrics.map(&:to_songname)
           @lyrics_list.choose new_lyric.filename
         end
       end
-      stack do
-        @lyrics_list = list_box items: @current_song.lyrics, align: 'center' do |list|
-          @current_lyric = Lyric.new(list.text)
+      stack width: 1.0, margin_left: 20, margin_right: 20 do
+        # list of song's lyrics
+        @lyrics_list = list_box items: @current_song.lyrics.map(&:to_songname), align: 'center' do |list|
+          @current_lyric = Lyric.new list.text.to_filename
           @lyrics_box.text = @current_lyric.text
         end
-        @lyrics_box = edit_box width: 0.9, height: 0.8
-        button "Save" do
+        @lyrics_box = edit_box width: 1.0, height: 300
+      end
+      stack width: 0.5, margin_top: 30, margin_bottom: 20 do
+        # save button
+        button 'Save', width: 1.0, margin_left: 30, margin_right: 100 do
           @current_lyric.text = @lyrics_box.text
           @current_lyric.date = Time.now
           @current_lyric.save
-          puts "Save successful"
+          puts 'Save successful'
+        end
+      end
+      stack width: 0.5, margin_top: 30, margin_bottom: 20 do
+        # delete button
+        button 'Delete', width: 1.0, margin_left: 100, margin_right: 30 do
+          @current_song.remove_section_element 'lyrics', @current_lyric.filename
+          @lyrics_list.items = @current_song.lyrics.map(&:to_songname)
+          @current_lyric.delete
+          p "Delete successful"
         end
       end
     end
@@ -78,6 +95,7 @@ class MusicalSniffle < Shoes
   end
 
   def intro_window
+    cleanup_useless_backup_files
     available_songs = read_available_songs
     stack do
       para 'Select your song'
@@ -157,4 +175,4 @@ class MusicalSniffle < Shoes
   end
 end
 
-Shoes.app(width: WINDOW_WIDTH, height: WINDOW_HEIGHT, margin: 10, title: APP_NAME)
+MusicalSniffle.app(width: WINDOW_WIDTH, height: WINDOW_HEIGHT, margin: 10, title: APP_NAME)
